@@ -1,0 +1,27 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "omnigym-567a8",
+          "appId": "1:184376127684:android:932b915e93a37887531991",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "omnigym-567a8",
+          "configurations": {
+            "android": "1:184376127684:android:932b915e93a37887531991",
+            "ios": "1:184376127684:ios:1f544e2c521dcbd4531991",
+            "web": "1:184376127684:web:1cc28ececbdca9b9531991"
+          }
+        }
+      }
+    }
+  }
+}

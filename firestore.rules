@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ────────────────────────────────────────────────────────────
+
+    function claims() { return request.auth.token; }
+    function isAuth() { return request.auth != null; }
+
+    function isSuperAdmin() {
+      return isAuth() && claims().role == 'superadmin';
+    }
+
+    function isOwner(tenantId) {
+      return isAuth()
+          && claims().role == 'owner'
+          && claims().tenant_id == tenantId;
+    }
+
+    function isRegionalManager(tenantId) {
+      return isAuth()
+          && claims().role == 'regional_manager'
+          && claims().tenant_id == tenantId;
+    }
+
+    function isManager(tenantId, branchId) {
+      return isAuth()
+          && claims().role == 'branch_manager'
+          && claims().tenant_id == tenantId
+          && claims().branch_id == branchId;
+    }
+
+    function belongsToTenant(tenantId) {
+      return isAuth() && claims().tenant_id == tenantId;
+    }
+
+    function canManageBranch(tenantId, branchId) {
+      return isSuperAdmin()
+          || isOwner(tenantId)
+          || isRegionalManager(tenantId)
+          || isManager(tenantId, branchId);
+    }
+
+    // ─── Tenants ────────────────────────────────────────────────────────────
+
+    match /tenants/{tenantId} {
+      allow read:   if isSuperAdmin() || belongsToTenant(tenantId);
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin() || isOwner(tenantId);
+      allow delete: if isSuperAdmin();
+
+      // ─── Branches ───────────────────────────────────────────────────────
+
+      match /branches/{branchId} {
+        allow read:          if isSuperAdmin() || belongsToTenant(tenantId);
+        allow create, update: if isSuperAdmin() || isOwner(tenantId) || isRegionalManager(tenantId);
+        allow delete:         if isSuperAdmin() || isOwner(tenantId);
+
+        // Check-ins: log inmutable — solo append para personal operativo
+        match /check_ins/{checkInId} {
+          allow read:   if canManageBranch(tenantId, branchId);
+          allow create: if isAuth() && belongsToTenant(tenantId);
+          allow update, delete: if false;
+        }
+      }
+
+      // ─── Members ────────────────────────────────────────────────────────
+
+      match /members/{memberId} {
+        allow read: if isSuperAdmin()
+            || isOwner(tenantId)
+            || isRegionalManager(tenantId)
+            || (isAuth() && claims().tenant_id == tenantId && claims().branch_id in resource.data.allowed_branches)
+            || (isAuth() && request.auth.uid == memberId);
+
+        allow create: if isSuperAdmin()
+            || isOwner(tenantId)
+            || isRegionalManager(tenantId)
+            || isManager(tenantId, request.resource.data.allowed_branches[0]);
+
+        allow update: if isSuperAdmin()
+            || isOwner(tenantId)
+            || isRegionalManager(tenantId)
+            || isManager(tenantId, resource.data.allowed_branches[0]);
+
+        allow delete: if isSuperAdmin() || isOwner(tenantId);
+      }
+
+      // ─── Membership Plans ───────────────────────────────────────────────
+
+      match /membership_plans/{planId} {
+        allow read:  if isAuth() && belongsToTenant(tenantId);
+        allow write: if isSuperAdmin()
+            || isOwner(tenantId)
+            || isRegionalManager(tenantId);
+      }
+
+      // ─── Payments ───────────────────────────────────────────────────────
+
+      match /payments/{paymentId} {
+        allow read: if isSuperAdmin()
+            || isOwner(tenantId)
+            || isRegionalManager(tenantId)
+            || isManager(tenantId, resource.data.branch_id)
+            || (isAuth() && request.auth.uid == resource.data.member_id);
+
+        allow create: if isAuth() && belongsToTenant(tenantId);
+        allow update: if isSuperAdmin()
+            || isOwner(tenantId)
+            || isRegionalManager(tenantId)
+            || isManager(tenantId, resource.data.branch_id);
+        allow delete: if isSuperAdmin();
+      }
+    }
+  }
+}
