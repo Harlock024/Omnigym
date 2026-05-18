@@ -10,6 +10,19 @@ enum UserRole { superuser, owner, staff }
 enum UserStatus { active, suspended }
 
 @freezed
+class NotificationPrefs with _$NotificationPrefs {
+  const factory NotificationPrefs({
+    @Default(true) @JsonKey(name: 'check_ins') bool checkIns,
+    @Default(true) @JsonKey(name: 'payments') bool payments,
+    @Default(true) @JsonKey(name: 'member_expiry') bool memberExpiry,
+    @Default(false) @JsonKey(name: 'marketing') bool marketing,
+  }) = _NotificationPrefs;
+
+  factory NotificationPrefs.fromJson(Map<String, dynamic> json) =>
+      _$NotificationPrefsFromJson(json);
+}
+
+@freezed
 class AppUser with _$AppUser {
   const factory AppUser({
     required String id,
@@ -17,8 +30,13 @@ class AppUser with _$AppUser {
     @JsonKey(name: 'branch_id') String? branchId,
     required String name,
     required String email,
+    String? phone,
+    @JsonKey(name: 'photo_url') String? photoUrl,
     required UserRole role,
     required UserStatus status,
+    @JsonKey(name: 'notification_prefs')
+    @Default(NotificationPrefs())
+    NotificationPrefs notificationPrefs,
     @JsonKey(name: 'created_at')
     @NullableTimestampConverter()
     DateTime? createdAt,
