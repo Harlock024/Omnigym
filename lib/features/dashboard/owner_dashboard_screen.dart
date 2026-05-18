@@ -25,6 +25,11 @@ class OwnerDashboardScreen extends ConsumerWidget {
             onPressed: () => context.push('/staff'),
           ),
           IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: 'Mi perfil',
+            onPressed: () => context.push('/profile'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(firebaseAuthProvider).signOut(),
           ),

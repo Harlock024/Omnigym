@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/models/branch.dart';
 import '../../core/providers/providers.dart';
@@ -16,6 +17,11 @@ class ManagerDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mi Sucursal'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: 'Mi perfil',
+            onPressed: () => context.push('/profile'),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(firebaseAuthProvider).signOut(),

@@ -6,6 +6,7 @@ import '../core/providers/providers.dart';
 import '../features/auth/login_screen.dart';
 import '../features/dashboard/owner_dashboard_screen.dart';
 import '../features/dashboard/manager_dashboard_screen.dart';
+import '../features/profile/profile_screen.dart';
 import '../features/staff/staff_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -39,6 +40,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard/manager',
         builder: (context, _) => const ManagerDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, _) => const ProfileScreen(),
       ),
       GoRoute(
         path: '/staff',
