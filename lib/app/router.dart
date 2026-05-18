@@ -48,12 +48,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
 String _homeForRole(String? role) {
   switch (role) {
-    case 'superadmin':
+    case 'superuser':
     case 'owner':
-    case 'regional_manager':
       return '/dashboard/owner';
-    case 'branch_manager':
-    case 'receptionist':
+    case 'staff':
       return '/dashboard/manager';
     default:
       return '/login';
