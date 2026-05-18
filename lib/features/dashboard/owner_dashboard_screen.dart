@@ -20,6 +20,11 @@ class OwnerDashboardScreen extends ConsumerWidget {
             const Text('OmniGym'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.palette_outlined),
+            tooltip: 'Apariencia',
+            onPressed: () => context.push('/settings/branding'),
+          ),
+          IconButton(
             icon: const Icon(Icons.people_outline),
             tooltip: 'Equipo',
             onPressed: () => context.push('/staff'),
@@ -62,13 +67,14 @@ class _OwnerDashboardBody extends ConsumerWidget {
     return branchesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error: $e')),
-      data: (branches) => _BranchGrid(branches: branches),
+      data: (branches) => _BranchGrid(tenantId: tenantId, branches: branches),
     );
   }
 }
 
 class _BranchGrid extends StatelessWidget {
-  const _BranchGrid({required this.branches});
+  const _BranchGrid({required this.tenantId, required this.branches});
+  final String tenantId;
   final List<Branch> branches;
 
   @override
@@ -83,21 +89,27 @@ class _BranchGrid extends StatelessWidget {
         maxCrossAxisExtent: 320,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 1.4,
+        childAspectRatio: 1.3,
       ),
       itemCount: branches.length,
-      itemBuilder: (_, i) => _BranchCard(branch: branches[i]),
+      itemBuilder: (_, i) =>
+          _BranchCard(tenantId: tenantId, branch: branches[i]),
     );
   }
 }
 
-class _BranchCard extends StatelessWidget {
-  const _BranchCard({required this.branch});
+class _BranchCard extends ConsumerWidget {
+  const _BranchCard({required this.tenantId, required this.branch});
+  final String tenantId;
   final Branch branch;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final args = (tenantId: tenantId, branchId: branch.id);
+
+    final membersAsync = ref.watch(activeMemberCountProvider(args));
+    final checkInsAsync = ref.watch(todayCheckInCountProvider(args));
 
     return Card(
       child: Padding(
@@ -116,7 +128,8 @@ class _BranchCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: branch.isActive
                         ? cs.primaryContainer
@@ -136,18 +149,52 @@ class _BranchCard extends StatelessWidget {
               ],
             ),
             const Spacer(),
-            // TODO Feature #5: aquí irán métricas reales (socios activos, check-ins del día)
-            Text(
-              'Socios activos: —',
-              style: Theme.of(context).textTheme.bodySmall,
+            _MetricRow(
+              icon: Icons.people_outline,
+              label: 'Socios activos',
+              valueAsync: membersAsync,
             ),
-            Text(
-              'Check-ins hoy: —',
-              style: Theme.of(context).textTheme.bodySmall,
+            const SizedBox(height: 4),
+            _MetricRow(
+              icon: Icons.login,
+              label: 'Check-ins hoy',
+              valueAsync: checkInsAsync,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MetricRow extends StatelessWidget {
+  const _MetricRow({
+    required this.icon,
+    required this.label,
+    required this.valueAsync,
+  });
+
+  final IconData icon;
+  final String label;
+  final AsyncValue<int> valueAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = valueAsync.whenOrNull(data: (v) => v.toString()) ?? '…';
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(label,
+              style: Theme.of(context).textTheme.bodySmall),
+        ),
+        Text(value,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+      ],
     );
   }
 }
