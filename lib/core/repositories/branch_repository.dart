@@ -41,6 +41,33 @@ class BranchRepository {
     await _col(tenantId).doc(branchId).update({'is_active': isActive});
   }
 
+  Stream<int> watchTodayCheckInCount(String tenantId, String branchId) {
+    final now = DateTime.now();
+    final todayMidnight = DateTime(now.year, now.month, now.day);
+    return _col(tenantId)
+        .doc(branchId)
+        .collection('check_ins')
+        .where('timestamp', isGreaterThanOrEqualTo: todayMidnight)
+        .snapshots()
+        .map((snap) => snap.size);
+  }
+
+  Stream<int> watchRangeCheckInCount(
+    String tenantId,
+    String branchId,
+    DateTime from,
+    DateTime to,
+  ) {
+    final endOfDay = DateTime(to.year, to.month, to.day, 23, 59, 59);
+    return _col(tenantId)
+        .doc(branchId)
+        .collection('check_ins')
+        .where('timestamp', isGreaterThanOrEqualTo: from)
+        .where('timestamp', isLessThanOrEqualTo: endOfDay)
+        .snapshots()
+        .map((snap) => snap.size);
+  }
+
   Future<void> update(Branch branch) async {
     final json = branch.toJson()..remove('id')..remove('tenant_id');
     await _col(branch.tenantId).doc(branch.id).update(json);

@@ -43,6 +43,14 @@ class MemberRepository {
     return ref.id;
   }
 
+  Stream<int> watchActiveCount(String tenantId, String branchId) {
+    return _col(tenantId)
+        .where('allowed_branches', arrayContains: branchId)
+        .where('access_status', isEqualTo: AccessStatus.active.name)
+        .snapshots()
+        .map((snap) => snap.size);
+  }
+
   Future<void> updateAccessStatus(
     String tenantId,
     String memberId,

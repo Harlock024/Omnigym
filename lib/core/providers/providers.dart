@@ -101,6 +101,22 @@ final currentBranchIdProvider = FutureProvider<String?>((ref) async {
   return result.claims?['branch_id'] as String?;
 });
 
+// ─── Métricas por sucursal ───────────────────────────────────────────────────
+
+final activeMemberCountProvider =
+    StreamProvider.family<int, ({String tenantId, String branchId})>(
+  (ref, args) => ref
+      .watch(memberRepositoryProvider)
+      .watchActiveCount(args.tenantId, args.branchId),
+);
+
+final todayCheckInCountProvider =
+    StreamProvider.family<int, ({String tenantId, String branchId})>(
+  (ref, args) => ref
+      .watch(branchRepositoryProvider)
+      .watchTodayCheckInCount(args.tenantId, args.branchId),
+);
+
 // ─── AppUser del operador autenticado ────────────────────────────────────────
 
 final currentAppUserProvider = StreamProvider<AppUser?>((ref) {
