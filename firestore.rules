@@ -7,8 +7,8 @@ service cloud.firestore {
     function claims() { return request.auth.token; }
     function isAuth() { return request.auth != null; }
 
-    function isSuperAdmin() {
-      return isAuth() && claims().role == 'superadmin';
+    function isSuperUser() {
+      return isAuth() && claims().role == 'superuser';
     }
 
     function isOwner(tenantId) {
@@ -17,15 +17,9 @@ service cloud.firestore {
           && claims().tenant_id == tenantId;
     }
 
-    function isRegionalManager(tenantId) {
+    function isStaff(tenantId, branchId) {
       return isAuth()
-          && claims().role == 'regional_manager'
-          && claims().tenant_id == tenantId;
-    }
-
-    function isManager(tenantId, branchId) {
-      return isAuth()
-          && claims().role == 'branch_manager'
+          && claims().role == 'staff'
           && claims().tenant_id == tenantId
           && claims().branch_id == branchId;
     }
@@ -35,31 +29,51 @@ service cloud.firestore {
     }
 
     function canManageBranch(tenantId, branchId) {
-      return isSuperAdmin()
+      return isSuperUser()
           || isOwner(tenantId)
-          || isRegionalManager(tenantId)
-          || isManager(tenantId, branchId);
+          || isStaff(tenantId, branchId);
+    }
+
+    // ─── Users (staff, owners, superuser) ───────────────────────────────────
+
+    match /users/{userId} {
+      // Cada usuario lee y actualiza su propio perfil
+      allow read: if isAuth() && request.auth.uid == userId;
+
+      // Superuser gestiona todos los usuarios
+      allow read, write: if isSuperUser();
+
+      // Owner gestiona el staff de su propio tenant
+      allow read: if isAuth()
+          && claims().role == 'owner'
+          && resource.data.tenant_id == claims().tenant_id;
+      allow create: if isAuth()
+          && claims().role == 'owner'
+          && request.resource.data.tenant_id == claims().tenant_id;
+      allow update: if isAuth()
+          && claims().role == 'owner'
+          && resource.data.tenant_id == claims().tenant_id;
     }
 
     // ─── Tenants ────────────────────────────────────────────────────────────
 
     match /tenants/{tenantId} {
-      allow read:   if isSuperAdmin() || belongsToTenant(tenantId);
-      allow create: if isSuperAdmin();
-      allow update: if isSuperAdmin() || isOwner(tenantId);
-      allow delete: if isSuperAdmin();
+      allow read:   if isSuperUser() || belongsToTenant(tenantId);
+      allow create: if isSuperUser();
+      allow update: if isSuperUser() || isOwner(tenantId);
+      allow delete: if isSuperUser();
 
       // ─── Branches ───────────────────────────────────────────────────────
 
       match /branches/{branchId} {
-        allow read:          if isSuperAdmin() || belongsToTenant(tenantId);
-        allow create, update: if isSuperAdmin() || isOwner(tenantId) || isRegionalManager(tenantId);
-        allow delete:         if isSuperAdmin() || isOwner(tenantId);
+        allow read:           if isSuperUser() || belongsToTenant(tenantId);
+        allow create, update: if isSuperUser() || isOwner(tenantId);
+        allow delete:         if isSuperUser() || isOwner(tenantId);
 
         // Check-ins: log inmutable — solo append para personal operativo
         match /check_ins/{checkInId} {
-          allow read:   if canManageBranch(tenantId, branchId);
-          allow create: if isAuth() && belongsToTenant(tenantId);
+          allow read:           if canManageBranch(tenantId, branchId);
+          allow create:         if isAuth() && belongsToTenant(tenantId);
           allow update, delete: if false;
         }
       }
@@ -67,49 +81,42 @@ service cloud.firestore {
       // ─── Members ────────────────────────────────────────────────────────
 
       match /members/{memberId} {
-        allow read: if isSuperAdmin()
+        allow read: if isSuperUser()
             || isOwner(tenantId)
-            || isRegionalManager(tenantId)
             || (isAuth() && claims().tenant_id == tenantId && claims().branch_id in resource.data.allowed_branches)
             || (isAuth() && request.auth.uid == memberId);
 
-        allow create: if isSuperAdmin()
+        allow create: if isSuperUser()
             || isOwner(tenantId)
-            || isRegionalManager(tenantId)
-            || isManager(tenantId, request.resource.data.allowed_branches[0]);
+            || isStaff(tenantId, request.resource.data.allowed_branches[0]);
 
-        allow update: if isSuperAdmin()
+        allow update: if isSuperUser()
             || isOwner(tenantId)
-            || isRegionalManager(tenantId)
-            || isManager(tenantId, resource.data.allowed_branches[0]);
+            || isStaff(tenantId, resource.data.allowed_branches[0]);
 
-        allow delete: if isSuperAdmin() || isOwner(tenantId);
+        allow delete: if isSuperUser() || isOwner(tenantId);
       }
 
       // ─── Membership Plans ───────────────────────────────────────────────
 
       match /membership_plans/{planId} {
         allow read:  if isAuth() && belongsToTenant(tenantId);
-        allow write: if isSuperAdmin()
-            || isOwner(tenantId)
-            || isRegionalManager(tenantId);
+        allow write: if isSuperUser() || isOwner(tenantId);
       }
 
       // ─── Payments ───────────────────────────────────────────────────────
 
       match /payments/{paymentId} {
-        allow read: if isSuperAdmin()
+        allow read: if isSuperUser()
             || isOwner(tenantId)
-            || isRegionalManager(tenantId)
-            || isManager(tenantId, resource.data.branch_id)
+            || isStaff(tenantId, resource.data.branch_id)
             || (isAuth() && request.auth.uid == resource.data.member_id);
 
         allow create: if isAuth() && belongsToTenant(tenantId);
-        allow update: if isSuperAdmin()
+        allow update: if isSuperUser()
             || isOwner(tenantId)
-            || isRegionalManager(tenantId)
-            || isManager(tenantId, resource.data.branch_id);
-        allow delete: if isSuperAdmin();
+            || isStaff(tenantId, resource.data.branch_id);
+        allow delete: if isSuperUser();
       }
     }
   }
