@@ -45,4 +45,26 @@ class UserRepository {
   Future<void> updateBranchId(String uid, String? branchId) async {
     await _col.doc(uid).update({'branch_id': branchId});
   }
+
+  Future<void> updateProfile(
+    String uid, {
+    required String name,
+    String? phone,
+    String? photoUrl,
+  }) async {
+    await _col.doc(uid).update({
+      'name': name,
+      'phone': phone,
+      'photo_url': photoUrl,
+    });
+  }
+
+  Future<void> updateNotificationPrefs(
+    String uid,
+    NotificationPrefs prefs,
+  ) async {
+    await _col.doc(uid).update({
+      'notification_prefs': prefs.toJson(),
+    });
+  }
 }
