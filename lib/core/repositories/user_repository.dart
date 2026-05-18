@@ -41,4 +41,8 @@ class UserRepository {
   Future<void> updateRole(String uid, UserRole role) async {
     await _col.doc(uid).update({'role': role.name});
   }
+
+  Future<void> updateBranchId(String uid, String? branchId) async {
+    await _col.doc(uid).update({'branch_id': branchId});
+  }
 }
