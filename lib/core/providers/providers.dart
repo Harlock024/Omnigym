@@ -3,10 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/app_user.dart';
 import '../models/tenant.dart';
 import '../repositories/branch_repository.dart';
 import '../repositories/member_repository.dart';
 import '../repositories/tenant_repository.dart';
+import '../repositories/user_repository.dart';
 import '../services/kill_switch_service.dart';
 
 // ─── Firebase instances ───────────────────────────────────────────────────────
@@ -45,6 +47,10 @@ final branchRepositoryProvider = Provider<BranchRepository>(
 
 final memberRepositoryProvider = Provider<MemberRepository>(
   (ref) => MemberRepository(ref.watch(firestoreProvider)),
+);
+
+final userRepositoryProvider = Provider<UserRepository>(
+  (ref) => UserRepository(ref.watch(firestoreProvider)),
 );
 
 // ─── Services ────────────────────────────────────────────────────────────────
@@ -93,4 +99,12 @@ final currentBranchIdProvider = FutureProvider<String?>((ref) async {
   if (user == null) return null;
   final result = await user.getIdTokenResult();
   return result.claims?['branch_id'] as String?;
+});
+
+// ─── AppUser del operador autenticado ────────────────────────────────────────
+
+final currentAppUserProvider = StreamProvider<AppUser?>((ref) {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return Stream.value(null);
+  return ref.watch(userRepositoryProvider).watch(user.uid);
 });
