@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/providers/providers.dart';
 import '../features/auth/login_screen.dart';
+import '../features/auth/register_screen.dart';
 import '../features/dashboard/owner_dashboard_screen.dart';
 import '../features/dashboard/manager_dashboard_screen.dart';
 import '../features/profile/profile_screen.dart';
@@ -33,6 +34,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, _) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, _) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/dashboard/owner',

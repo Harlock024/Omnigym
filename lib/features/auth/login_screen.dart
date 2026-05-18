@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/providers/providers.dart';
 
@@ -109,6 +110,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Iniciar sesión'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => context.push('/register'),
+                  child: const Text('¿Nuevo gimnasio? Crear cuenta'),
                 ),
               ],
             ),
