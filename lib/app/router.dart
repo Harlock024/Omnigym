@@ -6,6 +6,7 @@ import '../core/providers/providers.dart';
 import '../features/auth/login_screen.dart';
 import '../features/dashboard/owner_dashboard_screen.dart';
 import '../features/dashboard/manager_dashboard_screen.dart';
+import '../features/staff/staff_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authAsync = ref.watch(authStateProvider);
@@ -38,6 +39,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard/manager',
         builder: (context, _) => const ManagerDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/staff',
+        builder: (context, _) => const StaffScreen(),
+        redirect: (context, state) async {
+          final role = await ref.read(currentUserRoleProvider.future);
+          if (role != 'owner' && role != 'superuser') return '/dashboard/owner';
+          return null;
+        },
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

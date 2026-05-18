@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/models/branch.dart';
 import '../../core/providers/providers.dart';
@@ -18,6 +19,11 @@ class OwnerDashboardScreen extends ConsumerWidget {
             ) ??
             const Text('OmniGym'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.people_outline),
+            tooltip: 'Equipo',
+            onPressed: () => context.push('/staff'),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(firebaseAuthProvider).signOut(),
