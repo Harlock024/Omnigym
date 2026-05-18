@@ -7,6 +7,7 @@ import '../features/auth/login_screen.dart';
 import '../features/dashboard/owner_dashboard_screen.dart';
 import '../features/dashboard/manager_dashboard_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/settings/tenant_branding_screen.dart';
 import '../features/staff/staff_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -44,6 +45,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile',
         builder: (context, _) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/settings/branding',
+        builder: (context, _) => const TenantBrandingScreen(),
+        redirect: (context, state) async {
+          final role = await ref.read(currentUserRoleProvider.future);
+          if (role != 'owner' && role != 'superuser') return '/dashboard/owner';
+          return null;
+        },
       ),
       GoRoute(
         path: '/staff',
